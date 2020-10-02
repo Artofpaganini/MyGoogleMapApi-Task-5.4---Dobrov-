@@ -36,6 +36,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private static final String COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private static final float DEFAULT_ZOOM = 15f;
+    private static final int CIRCLE_RADIUS = 10000;
+    private static final int CIRCLE_STROKE_WIDTH = 10;
+    private static final int MARKERS_QUANTITY = 5;
+    private static final int CONST_TWO = 2;
+    private static final float METERS_PER_DEGREE_AT_EQUATOR = 111000f;
+
 
     private boolean locationPermissionGranted = false;
     private GoogleMap map;
@@ -65,20 +71,20 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             Random random = new Random();
 
             // конвертируем радиус из  метров в градусы
-            double radiusInDegrees = radius / 111000f;
+            double radiusInDegrees = radius / METERS_PER_DEGREE_AT_EQUATOR;
 
-            double u = random.nextDouble();
-            double v = random.nextDouble();
-            double w = radiusInDegrees * Math.sqrt(u);
-            double t = 2 * Math.PI * v;
-            double x = w * Math.cos(t);
-            double y = w * Math.sin(t);
+            double randomValueNotMoreRadius = random.nextDouble();
+            double randomDegree = random.nextDouble();
+            double randomRangeBtwnCenterAndRandomPoint = radiusInDegrees * Math.sqrt(randomValueNotMoreRadius);
+            double randomDegreeInRadians = CONST_TWO * Math.PI * randomDegree;
+            double coordinateX = randomRangeBtwnCenterAndRandomPoint * Math.cos(randomDegreeInRadians);
+            double coordinateY = randomRangeBtwnCenterAndRandomPoint * Math.sin(randomDegreeInRadians);
 
-            double new_x = x / Math.cos(myCurrentLongitudeY);
+            double valueBtwnCenterAndRadiusEnd = coordinateX / Math.cos(myCurrentLongitudeY);
 
-            double randomLatitudeX = new_x + myCurrentLatitudeX;
-            double foundLongitude = y + myCurrentLongitudeY;
-            LatLng randomLatLng = new LatLng(randomLatitudeX, foundLongitude);
+            double randomLatitudeX = valueBtwnCenterAndRadiusEnd + myCurrentLatitudeX;
+            double randomLongitudeY = coordinateY + myCurrentLongitudeY;
+            LatLng randomLatLng = new LatLng(randomLatitudeX, randomLongitudeY);
             randomPoints.add(randomLatLng);
             Location randomLocation = new Location("");
             randomLocation.setLatitude(randomLatLng.latitude);
@@ -109,14 +115,14 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private void drawCircle(LatLng location) {
         CircleOptions options = new CircleOptions();
         options.center(location);
-        options.radius(5000);
-        options.strokeWidth(10);
+        options.radius(CIRCLE_RADIUS);
+        options.strokeWidth(CIRCLE_STROKE_WIDTH);
         options.strokeColor(Color.RED);
 
         Log.d(TAG, "drawCircle: DRAW THE CIRCLE");
         map.addCircle(options);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < MARKERS_QUANTITY; i++) {
             Log.d(TAG, "drawCircle: ADDED MARKER #" + i);
             map.addMarker(new MarkerOptions().position(getRandomLocation(location, (int) options.getRadius())));
         }
@@ -131,20 +137,17 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         try {
             if (locationPermissionGranted) {
                 final Task location = fusedLocationProviderClient.getLastLocation();
-                location.addOnCompleteListener(new OnCompleteListener() {
-                    @Override
-                    public void onComplete(@NonNull Task task) {
+                location.addOnCompleteListener(task -> {
 
-                        if (task.isSuccessful()) {
-                            Location currentLocation = (Location) task.getResult();
+                    if (task.isSuccessful()) {
+                        Location currentLocation = (Location) task.getResult();
 
-                            moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()), DEFAULT_ZOOM);
-                            drawCircle(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()));
+                        moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()), DEFAULT_ZOOM);
+                        drawCircle(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()));
 
-                            Log.d(TAG, "onComplete: WE FOUND A LOCATION");
-                        } else {
-                            Log.d(TAG, "onComplete: LOCATION IS NULL, can  make a checking  location  again , by  gps and  wifi");
-                        }
+                        Log.d(TAG, "onComplete: WE FOUND A LOCATION");
+                    } else {
+                        Log.d(TAG, "onComplete: LOCATION IS NULL, can  make a checking  location  again , by  gps and  wifi");
                     }
                 });
             }

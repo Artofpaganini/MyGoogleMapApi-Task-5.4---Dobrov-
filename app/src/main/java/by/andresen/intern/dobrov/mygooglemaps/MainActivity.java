@@ -6,7 +6,6 @@ import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -17,6 +16,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
     private static final int ERROR_DIALOG_REQUEST = 9001;
+    private static final String ERROR_MESSAGE = "Have some problem with connection to Google Service, please check logs ";
     private Button buttonMap;
 
     @Override
@@ -28,21 +28,20 @@ public class MainActivity extends AppCompatActivity {
 
         if (isServicesOK()) {
             init();
+        } else {
+            Toast.makeText(this, ERROR_MESSAGE, Toast.LENGTH_LONG).show();
         }
     }
 
     private void init() {
-        buttonMap.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-            Intent intent = new Intent(MainActivity.this,MapActivity.class);
+        buttonMap.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, MapActivity.class);
 
             startActivity(intent);
-            }
         });
     }
 
-    public boolean isServicesOK() {
+    private boolean isServicesOK() {
         Log.d(TAG, "isServicesOK: CHECK GOOGLE SERVICES VERSION");
         int available = GoogleApiAvailability.getInstance()
                 .isGooglePlayServicesAvailable(MainActivity.this);
